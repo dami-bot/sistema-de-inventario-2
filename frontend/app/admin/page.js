@@ -22,7 +22,7 @@ export default function Productos() {
   // Cargar productos desde el backend
   const cargarProductos = async () => {
     try {
-      const res = await fetch(`${API_URL}/admin`);
+      const res = await fetch(`${API_URL}/api/productos`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setProductos(data);
@@ -70,7 +70,7 @@ export default function Productos() {
     formData.append("imagen", file); // 👈 debe llamarse igual que en @FileInterceptor('imagen')
   }
 
-  const res = await fetch(`${API_URL}/productos`, {
+  const res = await fetch(`${API_URL}/api/productos`, {
     method: "POST",
     body: formData, // 👈 NO poner headers
   });
@@ -124,7 +124,7 @@ export default function Productos() {
     formData.append("imagen", editFile);
   }
 
-  const res = await fetch(`${API_URL}/productos/${productoEditando.id}`, {
+  const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}`, {
     method: "PUT",
     body: formData, // 👈 Importante: NO pongas headers aquí
   });
