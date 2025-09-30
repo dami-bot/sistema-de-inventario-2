@@ -22,6 +22,7 @@ export default function Productos() {
   // Cargar productos desde el backend
   const cargarProductos = async () => {
     try {
+      console.log("API_URL:", API_URL);
       const res = await fetch(`${API_URL}/api/productos`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
