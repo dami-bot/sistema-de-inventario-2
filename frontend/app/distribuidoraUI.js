@@ -10,6 +10,8 @@ export default function DistribuidoraUI() {
   const [productos, setProductos] = useState([]);
   const [carrito, setCarrito] = useState([]);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const [busqueda, setBusqueda] = useState("");
+  const [filtro, setFiltro] = useState("");
 
   const [nombreCliente, setNombreCliente] = useState("");
   const [direccionCliente, setDireccionCliente] = useState("");
@@ -19,7 +21,7 @@ export default function DistribuidoraUI() {
 
     const fetchProductos = async () => {
       try {
-        const res = await fetch(`${API_URL}/productos`);
+        const res = await fetch(`${API_URL}/api/productos`);
         if (!res.ok) return console.error("Error al obtener productos:", res.status);
         const data = await res.json();
         setProductos(Array.isArray(data) ? data : []);
@@ -43,6 +45,13 @@ export default function DistribuidoraUI() {
       return [...prev, { ...producto, cantidad: 1 }];
     });
   };
+  // Filtrado
+  const productosFiltrados = productos.filter(
+    (p) =>
+      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
+      p.nombre.toLowerCase().includes(filtro.toLowerCase())
+  );
+
 
   // Quitar producto del carrito
   const quitarDelCarrito = (id) => setCarrito((prev) => prev.filter((p) => p.id !== id));
@@ -130,6 +139,21 @@ export default function DistribuidoraUI() {
           )}
         </div>
       </nav>
+
+      <input
+        type="text"
+        placeholder="Buscar producto..."
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+        className="mb-2 p-2 border rounded w-full max-w-md"
+      />
+      <input
+        type="text"
+        placeholder="Filtrar..."
+        value={filtro}
+        onChange={(e) => setFiltro(e.target.value)}
+        className="mb-4 p-2 border rounded w-full max-w-md"
+      />
 
       <main className="container mx-auto p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

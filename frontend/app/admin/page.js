@@ -15,130 +15,156 @@ export default function Productos() {
   const [editPrecio, setEditPrecio] = useState("");
   const [editFile, setEditFile] = useState(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+ // 🌐 Configuración de variables de entorno
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-  // Cargar productos desde el backend
-  const cargarProductos = async () => {
-    try {
-      console.log("API_URL:", API_URL);
-      const res = await fetch(`${API_URL}/api/productos`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setProductos(data);
-    } catch (err) {
-      console.error("Error cargando productos:", err);
-    }
-  };
-
-  useEffect(() => {
-    cargarProductos();
-  }, []);
-
-  // Filtrado
-  const productosFiltrados = productos.filter(
-    (p) =>
-      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-      p.nombre.toLowerCase().includes(filtro.toLowerCase())
-  );
-
-  // Subida a Cloudinary
-  const subirImagen = async (file) => {
-    if (!file) return "";
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-      method: "POST",
-      body: formData,
-    });
+// 📦 Cargar productos desde el backend
+const cargarProductos = async () => {
+  try {
+    console.log("🌐 API_URL:", API_URL);
+    const res = await fetch(`${API_URL}/api/productos`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return data.secure_url;
-  };
+    setProductos(data);
+  } catch (err) {
+    console.error("❌ Error cargando productos:", err);
+  }
+};
 
-  // Agregar producto
- const agregarProducto = async (e) => {
+useEffect(() => {
+  cargarProductos();
+}, []);
+
+// 🔍 Filtrado de productos
+const productosFiltrados = productos.filter(
+  (p) =>
+    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
+    p.nombre.toLowerCase().includes(filtro.toLowerCase())
+);
+
+// ☁️ Subida de imagen a Cloudinary
+const subirImagen = async (file) => {
+  if (!file) return "";
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error("❌ Error subiendo imagen a Cloudinary");
+  const data = await res.json();
+  return data.secure_url;
+};
+
+// ➕ Agregar producto
+const agregarProducto = async (e) => {
   e.preventDefault();
+  console.log("📝 Agregando producto:", nombre);
+
+  let imagenUrl = "";
+  try {
+    if (file) imagenUrl = await subirImagen(file);
+  } catch (err) {
+    console.error(err);
+    return;
+  }
 
   const formData = new FormData();
   formData.append("nombre", nombre);
   formData.append("stock", stock);
   formData.append("precio", precio);
+  if (file) formData.append("imagen", imagenUrl);
 
-  if (file) {
-    formData.append("imagen", file); // 👈 debe llamarse igual que en @FileInterceptor('imagen')
+  try {
+    const res = await fetch(`${API_URL}/api/productos`, {
+      method: "POST",
+      body: formData, // ⚠️ No agregar headers
+    });
+
+    const text = await res.text();
+    console.log("📡 Respuesta del backend:", res.status, text);
+
+    if (!res.ok) throw new Error(`❌ Error al crear producto: ${res.status}`);
+
+    // ✅ Limpiar estados
+    setNombre("");
+    setStock("");
+    setPrecio("");
+    setFile(null);
+    cargarProductos();
+    console.log("✅ Producto agregado correctamente");
+  } catch (err) {
+    console.error("❌ Error en fetch POST:", err);
   }
-
-  const res = await fetch(`${API_URL}/api/productos`, {
-    method: "POST",
-    body: formData, // 👈 NO poner headers
-  });
-
-  if (!res.ok) {
-    console.error("❌ Error al crear producto:", res.status);
-    return;
-  }
-
-  setNombre("");
-  setStock("");
-  setPrecio("");
-  setFile(null);
-  cargarProductos();
 };
 
-
-  // Eliminar producto
-  const eliminarProducto = async (id) => {
-    await fetch(`${API_URL}/productos/${id}`, { method: "DELETE" });
+// 🗑️ Eliminar producto
+const eliminarProducto = async (id) => {
+  try {
+    await fetch(`${API_URL}/api/productos/${id}`, { method: "DELETE" });
     cargarProductos();
-  };
+    console.log(`🗑️ Producto ${id} eliminado`);
+  } catch (err) {
+    console.error("❌ Error al eliminar producto:", err);
+  }
+};
 
-  // Abrir edición
-  const abrirEdicion = (producto) => {
-    setProductoEditando(producto);
-    setEditNombre(producto.nombre);
-    setEditStock(producto.stock);
-    setEditPrecio(producto.precio);
-    setEditFile(null);
-  };
+// ✏️ Abrir edición
+const abrirEdicion = (producto) => {
+  setProductoEditando(producto);
+  setEditNombre(producto.nombre);
+  setEditStock(producto.stock);
+  setEditPrecio(producto.precio);
+  setEditFile(null);
+};
 
-  // Guardar edición
-  const guardarEdicion = async (e) => {
-    e.preventDefault();
-    let imagenUrl = productoEditando.imagenUrl;
-    if (editFile) {
-      imagenUrl = await subirImagen(editFile);
-    }
-
-    const guardarEdicion = async (e) => {
+// 💾 Guardar edición
+const guardarEdicion = async (e) => {
   e.preventDefault();
+  if (!productoEditando) return;
+
+  console.log("📝 Editando producto ID:", productoEditando.id);
+
+  let imagenUrl = productoEditando.imagenUrl || "";
+  try {
+    if (editFile) imagenUrl = await subirImagen(editFile);
+  } catch (err) {
+    console.error(err);
+    return;
+  }
 
   const formData = new FormData();
   formData.append("nombre", editNombre);
   formData.append("stock", editStock);
   formData.append("precio", editPrecio);
+  if (editFile) formData.append("imagen", imagenUrl);
 
-  // 📸 Si se seleccionó una nueva imagen, la agregamos al formData
-  if (editFile) {
-    formData.append("imagen", editFile);
+  try {
+    const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}`, {
+      method: "PUT", // ⚠️ PUT para actualizar
+      body: formData, // ⚠️ Sin headers
+    });
+
+    const text = await res.text();
+    console.log("📡 Respuesta del backend:", res.status, text);
+
+    if (!res.ok) throw new Error(`❌ Error al actualizar producto: ${res.status}`);
+
+    // ✅ Limpiar estados
+    setProductoEditando(null);
+    setEditFile(null);
+    cargarProductos();
+    console.log("✅ Producto actualizado correctamente");
+  } catch (err) {
+    console.error("❌ Error en fetch PUT:", err);
   }
-
-  const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}`, {
-    method: "PUT",
-    body: formData, // 👈 Importante: NO pongas headers aquí
-  });
-
-  if (!res.ok) {
-    console.error("❌ Error al actualizar producto:", res.status);
-    return;
-  }
-
-  setProductoEditando(null);
-  cargarProductos();
 };
-
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
@@ -161,7 +187,7 @@ export default function Productos() {
 
       <form
         onSubmit={agregarProducto}
-        className="flex flex-col sm:flex-row gap-2 mb-6 items-center"
+        className="flex flex-col lg:flex-row gap-2 mb-2 "
       >
         <input
           type="text"
@@ -286,5 +312,5 @@ export default function Productos() {
       )}
     </div>
   );
-  }
 }
+
