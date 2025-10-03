@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
-import Link from "next/link";
 import { FaBoxes, FaFacebookF, FaInstagram, FaEnvelope } from "react-icons/fa";
 
 export default function DistribuidoraUI() {
