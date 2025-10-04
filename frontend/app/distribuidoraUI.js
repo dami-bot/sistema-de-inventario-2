@@ -1,6 +1,6 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { FaShoppingCart } from "react-icons/fa";
+import { useRef, useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { FaBoxes, FaFacebookF, FaInstagram, FaEnvelope } from "react-icons/fa";
 
@@ -10,10 +10,14 @@ export default function DistribuidoraUI() {
   const [carrito, setCarrito] = useState([]);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [busqueda, setBusqueda] = useState("");
-  const [filtro, setFiltro] = useState("");
+  const [openCart, setOpenCart] = useState(false);
+
+
+
 
   const [nombreCliente, setNombreCliente] = useState("");
   const [direccionCliente, setDireccionCliente] = useState("");
+  const carruselRef = useRef(null);
 
   useEffect(() => {
     if (!API_URL) return console.error("NEXT_PUBLIC_API_URL no está definido");
@@ -31,6 +35,28 @@ export default function DistribuidoraUI() {
 
     fetchProductos();
   }, [API_URL]);
+  /* const ofertasDiarias = productos.slice(0, 4); // los primeros 5 productos como prueba */
+    const ofertasDiarias = productos.filter((p) => p.ofertaDiaria);
+
+  // 🔹 Auto-scroll del carrusel cada 2 segundos
+  useEffect(() => {
+    if (!carruselRef.current) return;
+    const carrusel = carruselRef.current;
+    let scrollIndex = 0;
+    const totalItems = ofertasDiarias.length;
+    const itemWidth = carrusel.firstChild?.offsetWidth + 24; // 24 = gap-6
+
+    const interval = setInterval(() => {
+      if (!itemWidth) return;
+      scrollIndex = (scrollIndex + 1) % totalItems;
+      carrusel.scrollTo({
+        left: scrollIndex * itemWidth,
+        behavior: "smooth",
+      });
+    }, 2000); // cada 2 segundos
+
+    return () => clearInterval(interval);
+  }, [ofertasDiarias]);
 
   // Agregar producto al carrito
   const agregarAlCarrito = (producto) => {
@@ -44,12 +70,7 @@ export default function DistribuidoraUI() {
       return [...prev, { ...producto, cantidad: 1 }];
     });
   };
-  // Filtrado
-  const productosFiltrados = productos.filter(
-    (p) =>
-      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-      p.nombre.toLowerCase().includes(filtro.toLowerCase())
-  );
+
 
 
   // Quitar producto del carrito
@@ -59,8 +80,11 @@ export default function DistribuidoraUI() {
   const totalCarrito = carrito.reduce((total, item) => total + item.precio * item.cantidad, 0);
 
   // Confirmar compra
+  // Confirmar compra y enviar por WhatsApp
   const comprar = async () => {
-    if (!nombreCliente || !direccionCliente) return alert("Por favor ingrese sus datos");
+    if (carrito.length === 0) return alert("Tu carrito está vacío.");
+    if (!nombreCliente || !direccionCliente)
+      return alert("Por favor ingresa tu nombre y dirección.");
 
     try {
       // Restar stock en el backend
@@ -70,7 +94,6 @@ export default function DistribuidoraUI() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ cantidad: item.cantidad }),
         });
-
         if (!res.ok) {
           const error = await res.json();
           alert(`Error con el producto "${item.nombre}": ${error.error}`);
@@ -78,12 +101,15 @@ export default function DistribuidoraUI() {
         }
       }
 
-      // Armar mensaje de WhatsApp
-      let whatsappMessage = `🛒 Nuevo pedido:\n\n👤 Cliente: ${nombreCliente}\n🏠 Dirección: ${direccionCliente}\n\n`;
+      // Crear número de pedido (simple)
+      const numeroPedido = `PED-${Date.now().toString().slice(-6)}`;
+
+      // Armar mensaje detallado de WhatsApp
+      let whatsappMessage = `🧾 *Nuevo pedido* #${numeroPedido}\n\n👤 Cliente: ${nombreCliente}\n🏠 Dirección: ${direccionCliente}\n\n📦 *Detalle del pedido:*\n`;
       carrito.forEach((item) => {
-        whatsappMessage += `- ${item.nombre} x${item.cantidad.precio} = $${item.precio * item.cantidad}\n`;
+        whatsappMessage += `- ${item.nombre}\n   ${item.cantidad} x $${item.precio} = $${item.precio * item.cantidad}\n`;
       });
-      whatsappMessage += `\n💰 Total: $${totalCarrito}`;
+      whatsappMessage += `\n💰 *Total:* $${totalCarrito.toFixed(2)}\n\n✅ Gracias por tu compra.`;
 
       // Abrir WhatsApp
       const whatsappUrl = `https://api.whatsapp.com/send?phone=5491164369179&text=${encodeURIComponent(
@@ -92,39 +118,55 @@ export default function DistribuidoraUI() {
       window.open(whatsappUrl, "_blank");
 
       // Registrar compra (opcional)
-      await fetch(`${API_URL}api/compras`, {
+      await fetch(`${API_URL}/compras`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          numeroPedido,
           cliente: nombreCliente,
           direccion: direccionCliente,
           items: carrito,
+          total: totalCarrito,
         }),
       });
 
-      // Limpiar carrito
+      // Limpiar carrito y campos
       setCarrito([]);
       setNombreCliente("");
       setDireccionCliente("");
+      setOpenCart(false);
 
-      alert("¡Compra realizada con éxito!");
-      const productosActualizados = await fetch(`${API_URL}api/productos`).then((res) => res.json());
-      setProductos(productosActualizados);
+      alert("✅ Pedido realizado con éxito.");
     } catch (err) {
       console.error("Error en la compra:", err);
-      alert("Hubo un error al realizar la compra.");
+      alert("❌ Hubo un error al procesar tu compra.");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-cyan-100 to-pink-100 flex flex-col">
       {/* NAVBAR */}
-      <nav className="bg-white shadow-sm p-4 flex justify-between items-center">
+      <nav className="bg-white shadow-sm p-4 flex justify-between items-center fixed top-0 w-full z-50 shadow-lg">
         <div className="flex items-center gap-4">
           <img src="/logo.jpg" alt="Logo" className="w-32 h-auto object-contain" />
           <h1 className="text-xl font-bold">Distribuidora</h1>
         </div>
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-6">
+          {/* 🛒 Icono del carrito */}
+          <button onClick={() => setOpenCart(true)} className="relative">
+            <FaShoppingCart className="text-2xl text-gray-700 hover:text-blue-600 transition" />
+            {carrito.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 rounded-full">
+                {carrito.reduce((total, item) => total + item.cantidad, 0)}
+              </span>
+            )}
+          </button>
+
+
+
+          {/* Usuario */}
           {session && (
             <>
               <span className="font-bold text-gray-700">Hola, {session.user.name}</span>
@@ -138,106 +180,181 @@ export default function DistribuidoraUI() {
           )}
         </div>
       </nav>
+      {/* 🏷️ Carrusel de ofertas diarias */}
+      <div className="relative w-full overflow-hidden py-6 mb-8 mt-50 bg-gradient-to-r from-gray-800 via-gray-900 to-black rounded-xl shadow-lg">
 
-      <input
-        type="text"
-        placeholder="Buscar producto..."
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-        className="mb-2 p-2 border rounded w-full max-w-md"
-      />
-      <input
-        type="text"
-        placeholder="Filtrar..."
-        value={filtro}
-        onChange={(e) => setFiltro(e.target.value)}
-        className="mb-4 p-2 border rounded w-full max-w-md"
-      />
-
-      <main className="container mx-auto p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {productos.map((producto) => (
-            <div
-              key={producto.id}
-              className="bg-white rounded-xl shadow-md p-4 flex flex-col items-center gap-3 group"
-            >
-              <img
-                src={producto.imagenUrl || "https://via.placeholder.com/150"}
-                alt={producto.nombre}
-                className="w-full h-48 object-cover rounded-lg mb-2 group-hover:scale-105 transition-transform duration-300"
-              />
-              <h2 className="text-lg font-bold text-gray-700 text-center">{producto.nombre}</h2>
-              <p className="text-gray-500 text-center">
-                Stock: <span className="font-semibold">{producto.stock}</span>
-              </p>
-              <p className="text-gray-500 text-center">
-                Precio: <span className="font-semibold">${producto.precio}</span>
-              </p>
-              <button
-                onClick={() => agregarAlCarrito(producto)}
-                className="w-2/3 hover:scale-105 transition bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                disabled={producto.stock === 0}
+        <h2 className="text-2xl caret-amber-400 font-bold text-center mb-4">🔥 Ofertas del día 🔥</h2>
+        <div
+        ref={carruselRef}
+         className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth">
+          {ofertasDiarias.map((item) => {
+            const enCarrito = carrito.find((p) => p.id === item.id);
+            return (
+              <div
+                key={item.id}
+                        className="min-w-[300px] snap-center bg-white rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
               >
-                {producto.stock === 0 ? "Sin stock" : "Agregar al carrito"}
-              </button>
-            </div>
-          ))}
-        </div>
-      </main>
+                <img
+                  src={item.imagenUrl || "https://via.placeholder.com/150"}
+                  alt={item.nombre}
+                  className="w-full h-48 object-cover rounded-lg mb-3"
+                />
+                <h3 className="text-lg font-bold text-gray-700">{item.nombre}</h3>
+                <p className="text-green-600 font-semibold">${item.precio}</p>
 
-      {/* CARRITO */}
-      <div className="fixed bottom-8 right-8 bg-white rounded-2xl shadow-2xl p-4 w-72 z-30 border border-blue-100">
-        <h3 className="text-xl font-sans mb-4 text-gray-700 text-center">Carrito de compras</h3>
-        {carrito.length === 0 ? (
-          <p className="text-gray-500 text-center">El carrito está vacío.</p>
-        ) : (
-          <>
-            <ul>
-              {carrito.map((item) => (
-                <li key={item.id} className="flex justify-between items-center mb-2">
-                  <span>
-                    {item.nombre} x{item.cantidad}
-                  </span>
+                {/* Botón para agregar o quitar */}
+                {enCarrito ? (
                   <button
                     onClick={() => quitarDelCarrito(item.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                    className="mt-2 w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
+                  >
+                    Quitar del carrito
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => agregarAlCarrito(item)}
+                    className="mt-2 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                  >
+                    Agregar al carrito
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* PANEL DEL CARRITO */}
+      <div
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 ${openCart ? "translate-x-0" : "translate-x-full"
+          }`}
+      >
+        <div className="p-4 flex justify-between items-center border-b">
+          <h2 className="text-lg font-semibold">🛒 Tu carrito</h2>
+          <button onClick={() => setOpenCart(false)} className="text-2xl">&times;</button>
+        </div>
+
+        <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-4rem)]">
+          {carrito.length === 0 ? (
+            <p className="text-gray-500 text-center mt-10">Tu carrito está vacío 🛍️</p>
+          ) : (
+            <>
+              {/* Lista de productos en carrito */}
+              {carrito.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center border-b pb-2 mb-2"
+                >
+                  <div>
+                    <h3 className="font-medium">{item.nombre}</h3>
+                    <p className="text-sm text-gray-500">
+                      {item.cantidad} x ${item.precio} ={" "}
+                      <span className="font-semibold">${item.precio * item.cantidad}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => quitarDelCarrito(item.id)}
+                    className="text-red-500 hover:text-red-700 text-sm font-semibold"
                   >
                     Quitar
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
-            <div className="mt-4 text-right font-bold text-lg text-blue-700">
-              Total: ${totalCarrito.toFixed(2)}
-            </div>
-          </>
-        )}
 
-        {/* Datos del cliente */}
-        <div className="mt-4">
+              {/* Total */}
+              <div className="mt-4 border-t pt-4 text-right">
+                <p className="text-lg font-bold">Total: ${totalCarrito.toFixed(2)}</p>
+              </div>
+
+              {/* Datos del cliente */}
+              <div className="mt-4 space-y-2">
+                <input
+                  type="text"
+                  placeholder="Nombre completo"
+                  value={nombreCliente}
+                  onChange={(e) => setNombreCliente(e.target.value)}
+                  className="border p-2 w-full rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="Dirección de entrega"
+                  value={direccionCliente}
+                  onChange={(e) => setDireccionCliente(e.target.value)}
+                  className="border p-2 w-full rounded"
+                />
+              </div>
+
+              <button
+                onClick={comprar}
+                className="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+              >
+                ✅ Confirmar pedido por WhatsApp
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Fondo oscuro al abrir carrito */}
+      {openCart && (
+        <div
+          onClick={() => setOpenCart(false)}
+          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+        ></div>
+      )}
+
+
+
+
+
+
+      <main className="container mx-auto p-4 pt-45">
+        {/* 🔍 Input de búsqueda */}
+        <div className="max-w-md mx-auto my-6">
           <input
             type="text"
-            placeholder="Nombre completo"
-            value={nombreCliente}
-            onChange={(e) => setNombreCliente(e.target.value)}
-            className="border p-2 w-full mb-2 rounded"
-          />
-          <input
-            type="text"
-            placeholder="Dirección de entrega"
-            value={direccionCliente}
-            onChange={(e) => setDireccionCliente(e.target.value)}
-            className="border p-2 w-full mb-2 rounded"
+            placeholder="Buscar productos..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
-        <button
-          onClick={comprar}
-          className="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg transition hover:scale-105"
-          disabled={carrito.length === 0}
-        >
-          Confirmar pedido por WhatsApp
-        </button>
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {productos
+            .filter((p) =>
+              p.nombre.toLowerCase().includes(busqueda.toLowerCase())
+            )
+            .map((producto) => (
+              <div
+                key={producto.id}
+                className="bg-white rounded-xl shadow-md p-4 flex flex-col items-center gap-3 group"
+              >
+                <img
+                  src={producto.imagenUrl || "https://via.placeholder.com/150"}
+                  alt={producto.nombre}
+                  className="w-full h-48 object-cover rounded-lg mb-2 group-hover:scale-105 transition-transform duration-300"
+                />
+                <h2 className="text-lg font-bold text-gray-700 text-center">{producto.nombre}</h2>
+                <p className="text-gray-500 text-center">
+                  Stock: <span className="font-semibold">{producto.stock}</span>
+                </p>
+                <p className="text-gray-500 text-center">
+                  Precio: <span className="font-semibold">${producto.precio}</span>
+                </p>
+                <button
+                  onClick={() => agregarAlCarrito(producto)}
+                  className="w-2/3 hover:scale-105 transition bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={producto.stock === 0}
+                >
+                  {producto.stock === 0 ? "Sin stock" : "Agregar al carrito"}
+                </button>
+              </div>
+            ))}
+
+        </div>
+      </main>
+
+
 
       {/* FOOTER */}
       <footer className="text-center text-gray-500 py-6 mt-12">
