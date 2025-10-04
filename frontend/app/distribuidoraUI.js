@@ -65,7 +65,7 @@ export default function DistribuidoraUI() {
     try {
       // Restar stock en el backend
       for (const item of carrito) {
-        const res = await fetch(`${API_URL}/productos/${item.id}/restar-stock`, {
+        const res = await fetch(`${API_URL}/api/productos/${item.id}/restar-stock`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ cantidad: item.cantidad }),
@@ -92,7 +92,7 @@ export default function DistribuidoraUI() {
       window.open(whatsappUrl, "_blank");
 
       // Registrar compra (opcional)
-      await fetch(`${API_URL}/compras`, {
+      await fetch(`${API_URL}api/compras`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -108,7 +108,7 @@ export default function DistribuidoraUI() {
       setDireccionCliente("");
 
       alert("¡Compra realizada con éxito!");
-      const productosActualizados = await fetch(`${API_URL}/productos`).then((res) => res.json());
+      const productosActualizados = await fetch(`${API_URL}api/productos`).then((res) => res.json());
       setProductos(productosActualizados);
     } catch (err) {
       console.error("Error en la compra:", err);
