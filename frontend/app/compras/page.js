@@ -6,7 +6,7 @@ export default function HistorialCompras() {
   const [compras, setCompras] = useState([]);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   useEffect(() => {
-    fetch( `${API_URL}/compras`)
+    fetch( `${API_URL}/api/compras`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Respuesta compras:", data); // 👈 agregá esto
@@ -21,7 +21,7 @@ export default function HistorialCompras() {
   const totalGeneral = Array.isArray(compras)
     ? compras.reduce((acc, compra) => {
         const totalCompra = compra.items.reduce(
-          (sum, item) => sum + item.price * item.cantidad,
+          (sum, item) => sum + item.precio * item.cantidad,
           0,
         );
         return acc + totalCompra;
@@ -36,7 +36,7 @@ export default function HistorialCompras() {
       return;
 
     try {
-      const res = await fetch( `${API_URL}/compras`, {
+      const res = await fetch( `${API_URL}/api/compras`, {
         method: "DELETE",
       });
 
@@ -44,7 +44,7 @@ export default function HistorialCompras() {
         alert("Historial eliminado correctamente");
         // Recargar historial
         const nuevasCompras = await fetch(
-          `${API_URL}/compras`,
+          `${API_URL}/api/compras`,
         ).then((r) => r.json());
         setCompras(nuevasCompras);
       } else {
@@ -87,7 +87,7 @@ export default function HistorialCompras() {
         {compras.map((compra) => {
           // Calcular el total de la compra
           const total = compra.items.reduce(
-            (acc, item) => acc + item.price * item.cantidad,
+            (acc, item) => acc + item.precio * item.cantidad,
             0,
           );
           return (
@@ -106,10 +106,10 @@ export default function HistorialCompras() {
                         alt={item.name}
                         className="h-8 w-8 rounded border object-cover"
                       />
-                      <span className="font-semibold">{item.name}</span>
+                      <span className="font-semibold">{item.nombre}</span>
                       <span className="text-gray-500">x{item.cantidad}</span>
                       <span className="ml-auto text-gray-400">
-                        ${item.price}
+                        ${item.precio * item.cantidad}
                       </span>
                     </li>
                   ))}

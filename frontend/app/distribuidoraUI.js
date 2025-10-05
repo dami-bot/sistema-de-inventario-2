@@ -35,8 +35,8 @@ export default function DistribuidoraUI() {
 
     fetchProductos();
   }, [API_URL]);
-  /* const ofertasDiarias = productos.slice(0, 4); // los primeros 5 productos como prueba */
-    const ofertasDiarias = productos.filter((p) => p.ofertaDiaria);
+  const ofertasDiarias = productos.slice(0, 10); // los primeros 5 productos como prueba
+  //const ofertasDiarias = productos.filter((p) => p.ofertaDiaria);
 
   // 🔹 Auto-scroll del carrusel cada 2 segundos
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function DistribuidoraUI() {
       whatsappMessage += `\n💰 *Total:* $${totalCarrito.toFixed(2)}\n\n✅ Gracias por tu compra.`;
 
       // Abrir WhatsApp
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=5491164369179&text=${encodeURIComponent(
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=5491121676940&text=${encodeURIComponent(
         whatsappMessage
       )}`;
       window.open(whatsappUrl, "_blank");
@@ -145,7 +145,7 @@ export default function DistribuidoraUI() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-cyan-100 to-pink-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-700 to-stone-300 flex flex-col">
       {/* NAVBAR */}
       <nav className="bg-white shadow-sm p-4 flex justify-between items-center fixed top-0 w-full z-50 shadow-lg">
         <div className="flex items-center gap-4">
@@ -181,9 +181,9 @@ export default function DistribuidoraUI() {
         </div>
       </nav>
       {/* 🏷️ Carrusel de ofertas diarias */}
-      <div className="relative w-full overflow-hidden py-6 mb-8 mt-50 bg-gradient-to-r from-gray-800 via-gray-900 to-black rounded-xl shadow-lg">
+      <div className="relative w-full overflow-hidden py-6 mb-8 mt-50 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-100 rounded-xl shadow-lg">
 
-        <h2 className="text-2xl caret-amber-400 font-bold text-center mb-4">🔥 Ofertas del día 🔥</h2>
+        <h2 className="text-4xl text-black font-bold text-center mb-6">🔥 Ofertas del día 🔥</h2>
         <div
         ref={carruselRef}
          className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth">
@@ -192,7 +192,7 @@ export default function DistribuidoraUI() {
             return (
               <div
                 key={item.id}
-                        className="min-w-[300px] snap-center bg-white rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
+                        className="min-w-[250px] snap-center bg-white rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
               >
                 <img
                   src={item.imagenUrl || "https://via.placeholder.com/150"}
@@ -308,7 +308,7 @@ export default function DistribuidoraUI() {
 
 
 
-      <main className="container mx-auto p-4 pt-45">
+      <main className="container mx-auto p-4 pt-5">
         {/* 🔍 Input de búsqueda */}
         <div className="max-w-md mx-auto my-6">
           <input
@@ -316,10 +316,10 @@ export default function DistribuidoraUI() {
             placeholder="Buscar productos..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full p-3 text-2xl text-amber-50 font-bold rounded-lg border border-gray-300 shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-600"
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 ">
           {productos
             .filter((p) =>
               p.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -327,7 +327,7 @@ export default function DistribuidoraUI() {
             .map((producto) => (
               <div
                 key={producto.id}
-                className="bg-white rounded-xl shadow-md p-4 flex flex-col items-center gap-3 group"
+                className="bg-white rounded-xl shadow-lg p-2 flex flex-col items-center gap-1 group"
               >
                 <img
                   src={producto.imagenUrl || "https://via.placeholder.com/150"}

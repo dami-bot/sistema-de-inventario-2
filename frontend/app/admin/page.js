@@ -14,157 +14,173 @@ export default function Productos() {
   const [editStock, setEditStock] = useState("");
   const [editPrecio, setEditPrecio] = useState("");
   const [editFile, setEditFile] = useState(null);
+  const [vencimiento, setVencimiento] = useState("");
+  const [ofertaDiaria, setOfertaDiaria] = useState(false);
+  const [editVencimiento, setEditVencimiento] = useState("");
+  const [editOfertaDiaria, setEditOfertaDiaria] = useState(false);
 
- // 🌐 Configuración de variables de entorno
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-// 📦 Cargar productos desde el backend
-const cargarProductos = async () => {
-  try {
-    console.log("🌐 API_URL:", API_URL);
-    const res = await fetch(`${API_URL}/api/productos`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    setProductos(data);
-  } catch (err) {
-    console.error("❌ Error cargando productos:", err);
-  }
-};
 
-useEffect(() => {
-  cargarProductos();
-}, []);
+  // 🌐 Configuración de variables de entorno
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-// 🔍 Filtrado de productos
-const productosFiltrados = productos.filter(
-  (p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-    p.nombre.toLowerCase().includes(filtro.toLowerCase())
-);
+  // 📦 Cargar productos desde el backend
+  const cargarProductos = async () => {
+    try {
+      console.log("🌐 API_URL:", API_URL);
+      const res = await fetch(`${API_URL}/api/productos`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setProductos(data);
+    } catch (err) {
+      console.error("❌ Error cargando productos:", err);
+    }
+  };
 
-// ☁️ Subida de imagen a Cloudinary
-const subirImagen = async (file) => {
-  if (!file) return "";
+  useEffect(() => {
+    cargarProductos();
+  }, []);
 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", UPLOAD_PRESET);
+  // 🔍 Filtrado de productos
+  const productosFiltrados = productos.filter(
+    (p) =>
+      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
+      p.nombre.toLowerCase().includes(filtro.toLowerCase())
+  );
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-    method: "POST",
-    body: formData,
-  });
+  // ☁️ Subida de imagen a Cloudinary
+  const subirImagen = async (file) => {
+    if (!file) return "";
 
-  if (!res.ok) throw new Error("❌ Error subiendo imagen a Cloudinary");
-  const data = await res.json();
-  return data.secure_url;
-};
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
 
-// ➕ Agregar producto
-const agregarProducto = async (e) => {
-  e.preventDefault();
-  console.log("📝 Agregando producto:", nombre);
-
-  let imagenUrl = "";
-  try {
-    if (file) imagenUrl = await subirImagen(file);
-  } catch (err) {
-    console.error(err);
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("nombre", nombre);
-  formData.append("stock", stock);
-  formData.append("precio", precio);
-  if (file) formData.append("imagen", imagenUrl);
-
-  try {
-    const res = await fetch(`${API_URL}/api/productos`, {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
       method: "POST",
-      body: formData, // ⚠️ No agregar headers
+      body: formData,
     });
 
-    const text = await res.text();
-    console.log("📡 Respuesta del backend:", res.status, text);
+    if (!res.ok) throw new Error("❌ Error subiendo imagen a Cloudinary");
+    const data = await res.json();
+    return data.secure_url;
+  };
 
-    if (!res.ok) throw new Error(`❌ Error al crear producto: ${res.status}`);
+  // ➕ Agregar producto
+  const agregarProducto = async (e) => {
+    e.preventDefault();
+    alert("📝 Agregando producto:", nombre);
 
-    // ✅ Limpiar estados
-    setNombre("");
-    setStock("");
-    setPrecio("");
-    setFile(null);
-    cargarProductos();
-    console.log("✅ Producto agregado correctamente");
-  } catch (err) {
-    console.error("❌ Error en fetch POST:", err);
-  }
-};
+    let imagenUrl = "";
+    try {
+      if (file) imagenUrl = await subirImagen(file);
+    } catch (err) {
+      console.error(err);
+      return;
+    }
 
-// 🗑️ Eliminar producto
-const eliminarProducto = async (id) => {
-  try {
-    await fetch(`${API_URL}/api/productos/${id}`, { method: "DELETE" });
-    cargarProductos();
-    console.log(`🗑️ Producto ${id} eliminado`);
-  } catch (err) {
-    console.error("❌ Error al eliminar producto:", err);
-  }
-};
+    const formData = new FormData();
+    formData.append("nombre", nombre);
+    formData.append("stock", stock);
+    formData.append("precio", precio);
+    if (file) formData.append("imagen", imagenUrl);
 
-// ✏️ Abrir edición
-const abrirEdicion = (producto) => {
-  setProductoEditando(producto);
-  setEditNombre(producto.nombre);
-  setEditStock(producto.stock);
-  setEditPrecio(producto.precio);
-  setEditFile(null);
-};
+    try {
+      const res = await fetch(`${API_URL}/api/productos`, {
+        method: "POST",
+        body: formData, // ⚠️ No agregar headers
+      });
 
-// 💾 Guardar edición
-const guardarEdicion = async (e) => {
-  e.preventDefault();
-  if (!productoEditando) return;
+      const text = await res.text();
+      console.log("📡 Respuesta del backend:", res.status, text);
 
-  console.log("📝 Editando producto ID:", productoEditando.id);
+      if (!res.ok) throw new Error(`❌ Error al crear producto: ${res.status}`);
 
-  let imagenUrl = productoEditando.imagenUrl || "";
-  try {
-    if (editFile) imagenUrl = await subirImagen(editFile);
-  } catch (err) {
-    console.error(err);
-    return;
-  }
+      // ✅ Limpiar estados
+      setNombre("");
+      setStock("");
+      setPrecio("");
+      setFile(null);
+      cargarProductos();
+      setVencimiento("");
+      setOfertaDiaria(false);
 
-  const formData = new FormData();
-  formData.append("nombre", editNombre);
-  formData.append("stock", editStock);
-  formData.append("precio", editPrecio);
-  if (editFile) formData.append("imagen", imagenUrl);
+      alert("✅ Producto agregado correctamente");
+      console.log("✅ Producto agregado correctamente");
+    } catch (err) {
+      console.error("❌ Error en fetch POST:", err);
+    }
+  };
 
-  try {
-    const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}`, {
-      method: "PUT", // ⚠️ PUT para actualizar
-      body: formData, // ⚠️ Sin headers
-    });
+  // 🗑️ Eliminar producto
+  const eliminarProducto = async (id) => {
+    try {
+      await fetch(`${API_URL}/api/productos/${id}`, { method: "DELETE" });
+      cargarProductos();
+      console.log(`🗑️ Producto ${id} eliminado`);
+    } catch (err) {
+      console.error("❌ Error al eliminar producto:", err);
+    }
+  };
 
-    const text = await res.text();
-    console.log("📡 Respuesta del backend:", res.status, text);
-
-    if (!res.ok) throw new Error(`❌ Error al actualizar producto: ${res.status}`);
-
-    // ✅ Limpiar estados
-    setProductoEditando(null);
+  // ✏️ Abrir edición
+  const abrirEdicion = (producto) => {
+    setProductoEditando(producto);
+    setEditNombre(producto.nombre);
+    setEditStock(producto.stock);
+    setEditPrecio(producto.precio);
     setEditFile(null);
-    cargarProductos();
-    console.log("✅ Producto actualizado correctamente");
-  } catch (err) {
-    console.error("❌ Error en fetch PUT:", err);
-  }
-};
+    setEditVencimiento(producto.vencimiento || "");
+    setEditOfertaDiaria(producto.ofertaDiaria || false);
+
+  };
+
+  // 💾 Guardar edición
+  const guardarEdicion = async (e) => {
+    e.preventDefault();
+    if (!productoEditando) return;
+
+    console.log("📝 Editando producto ID:", productoEditando.id);
+
+    let imagenUrl = productoEditando.imagenUrl || "";
+    try {
+      if (editFile) imagenUrl = await subirImagen(editFile);
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("nombre", editNombre);
+    formData.append("stock", editStock);
+    formData.append("precio", editPrecio);
+    formData.append("vencimiento", editVencimiento);
+    formData.append("ofertaDiaria", editOfertaDiaria);
+
+    if (editFile) formData.append("imagen", imagenUrl);
+
+    try {
+      const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}`, {
+        method: "PUT", // ⚠️ PUT para actualizar
+        body: formData, // ⚠️ Sin headers
+      });
+
+      const text = await res.text();
+      console.log("📡 Respuesta del backend:", res.status, text);
+
+      if (!res.ok) throw new Error(`❌ Error al actualizar producto: ${res.status}`);
+
+      // ✅ Limpiar estados
+      setProductoEditando(null);
+      setEditFile(null);
+      cargarProductos();
+      console.log("✅ Producto actualizado correctamente");
+    } catch (err) {
+      console.error("❌ Error en fetch PUT:", err);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
@@ -219,6 +235,23 @@ const guardarEdicion = async (e) => {
           onChange={(e) => setFile(e.target.files[0])}
           className="p-2 border rounded"
         />
+        <input
+          type="date"
+          value={vencimiento}
+          onChange={(e) => setVencimiento(e.target.value)}
+          required
+          className="p-2 border rounded"
+        />
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={ofertaDiaria}
+            onChange={(e) => setOfertaDiaria(e.target.checked)}
+          />
+          Oferta del día
+        </label>
+
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
           Agregar
         </button>
@@ -226,7 +259,8 @@ const guardarEdicion = async (e) => {
 
       {/* Edición */}
       {productoEditando && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+
           <form
             onSubmit={guardarEdicion}
             className="bg-white p-6 rounded shadow-md flex flex-col gap-2 w-full max-w-md"
@@ -258,6 +292,22 @@ const guardarEdicion = async (e) => {
               onChange={(e) => setEditFile(e.target.files[0])}
               className="p-2 border rounded"
             />
+            <input
+              type="date"
+              value={editVencimiento}
+              onChange={(e) => setEditVencimiento(e.target.value)}
+              className="p-2 border rounded"
+            />
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={editOfertaDiaria}
+                onChange={(e) => setEditOfertaDiaria(e.target.checked)}
+              />
+              Oferta del día
+            </label>
+
             <div className="flex justify-between mt-2">
               <button
                 type="button"
@@ -278,38 +328,72 @@ const guardarEdicion = async (e) => {
       )}
 
       {/* Lista de productos */}
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-4xl">
-        {productosFiltrados.map((p) => (
-          <li key={p.id} className="bg-white p-4 rounded shadow flex flex-col">
-            <img
-              src={p.imagenUrl || "https://via.placeholder.com/150"}
-              alt={p.nombre}
-              className="h-40 w-full object-cover mb-2 rounded"
-            />
-            <h3 className="font-bold">{p.nombre}</h3>
-            <p>Stock: {p.stock}</p>
-            <p>Precio: ${p.precio}</p>
-            <div className="mt-auto flex gap-2">
-              <button
-                onClick={() => abrirEdicion(p)}
-                className="bg-yellow-500 text-white px-2 py-1 rounded"
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => eliminarProducto(p.id)}
-                className="bg-red-500 text-white px-2 py-1 rounded"
-              >
-                Eliminar
-              </button>
-            </div>
-          </li>
-        ))}
+      <ul className="grid grid-cols-2 sm:grid-cols-5 gap-6 w-full max-w-8xl">
+        {productosFiltrados.map((p) => {
+          // Calcular si el producto está por vencer (menos de 7 días)
+          const estaPorVencer =
+            p.vencimiento &&
+            new Date(p.vencimiento) - new Date() < 7 * 24 * 60 * 60 * 1000;
+
+          return (
+            <li
+              key={p.id}
+              className="bg-white p-4 rounded shadow flex flex-col relative"
+            >
+              {/* Imagen del producto */}
+              <img
+                src={p.imagenUrl || "https://via.placeholder.com/150"}
+                alt={p.nombre}
+                className="h-40 w-full object-cover mb-2 rounded"
+              />
+
+              {/* Nombre y precio */}
+              <h3 className="font-bold">{p.nombre}</h3>
+              <p>Stock: {p.stock}</p>
+              <p>Precio: ${p.precio}</p>
+
+              {/* Fecha de vencimiento */}
+              <p>
+                Vence:{" "}
+                {p.vencimiento
+                  ? new Date(p.vencimiento).toLocaleDateString()
+                  : "—"}
+              </p>
+
+              {/* Alerta si está por vencer */}
+              {estaPorVencer && (
+                <p className="text-red-600 font-semibold">⚠️ Próximo a vencer</p>
+              )}
+
+              {/* Oferta del día */}
+              {p.ofertaDiaria && (
+                <p className="text-green-600 font-bold mt-1">🔥 En oferta del día</p>
+              )}
+
+              {/* Botones de acciones */}
+              <div className="mt-auto flex gap-2">
+                <button
+                  onClick={() => abrirEdicion(p)}
+                  className="bg-yellow-500 text-white px-2 py-1 rounded"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => eliminarProducto(p.id)}
+                  className="bg-red-500 text-white px-2 py-1 rounded"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {productosFiltrados.length === 0 && (
         <p className="mt-4 text-gray-500">No hay productos para mostrar.</p>
       )}
+
     </div>
   );
 }
