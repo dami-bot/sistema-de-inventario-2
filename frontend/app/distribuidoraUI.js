@@ -58,23 +58,58 @@ export default function DistribuidoraUI() {
     return () => clearInterval(interval);
   }, [ofertasDiarias]);
 
-  // Agregar producto al carrito
+  // ✅ Agregar producto al carrito (con validación de stock)
   const agregarAlCarrito = (producto) => {
     setCarrito((prev) => {
       const existe = prev.find((p) => p.id === producto.id);
+
       if (existe) {
-        return prev.map((p) =>
-          p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
-        );
+        if (existe.cantidad < producto.stock) {
+          return prev.map((p) =>
+            p.id === producto.id ? { ...p, cantidad: p.cantidad + 1 } : p
+          );
+        } else {
+          alert(`⚠️ No hay más stock disponible de "${producto.nombre}"`);
+          return prev;
+        }
       }
+
       return [...prev, { ...producto, cantidad: 1 }];
     });
   };
 
 
 
+
   // Quitar producto del carrito
   const quitarDelCarrito = (id) => setCarrito((prev) => prev.filter((p) => p.id !== id));
+
+  // ➕ Aumentar cantidad desde el carrito
+  const sumarCantidad = (id) => {
+    setCarrito((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          if (item.cantidad < item.stock) {
+            return { ...item, cantidad: item.cantidad + 1 };
+          } else {
+            alert(`⚠️ No hay más stock disponible de "${item.nombre}"`);
+          }
+        }
+        return item;
+      })
+    );
+  };
+
+  // ➖ Disminuir cantidad desde el carrito
+  const restarCantidad = (id) => {
+    setCarrito((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, cantidad: item.cantidad > 1 ? item.cantidad - 1 : 1 }
+          : item
+      )
+    );
+  };
 
   // Total del carrito
   const totalCarrito = carrito.reduce((total, item) => total + item.precio * item.cantidad, 0);
@@ -185,14 +220,14 @@ export default function DistribuidoraUI() {
 
         <h2 className="text-4xl text-black font-bold text-center mb-6">🔥 Ofertas del día 🔥</h2>
         <div
-        ref={carruselRef}
-         className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth">
+          ref={carruselRef}
+          className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth">
           {ofertasDiarias.map((item) => {
             const enCarrito = carrito.find((p) => p.id === item.id);
             return (
               <div
                 key={item.id}
-                        className="min-w-[250px] snap-center bg-white rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
+                className="min-w-[250px] snap-center bg-white rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
               >
                 <img
                   src={item.imagenUrl || "https://via.placeholder.com/150"}
@@ -231,12 +266,16 @@ export default function DistribuidoraUI() {
       >
         <div className="p-4 flex justify-between items-center border-b">
           <h2 className="text-lg font-semibold">🛒 Tu carrito</h2>
-          <button onClick={() => setOpenCart(false)} className="text-2xl">&times;</button>
+          <button onClick={() => setOpenCart(false)} className="text-2xl">
+            &times;
+          </button>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-4rem)]">
           {carrito.length === 0 ? (
-            <p className="text-gray-500 text-center mt-10">Tu carrito está vacío 🛍️</p>
+            <p className="text-gray-500 text-center mt-10">
+              Tu carrito está vacío 🛍️
+            </p>
           ) : (
             <>
               {/* Lista de productos en carrito */}
@@ -249,9 +288,30 @@ export default function DistribuidoraUI() {
                     <h3 className="font-medium">{item.nombre}</h3>
                     <p className="text-sm text-gray-500">
                       {item.cantidad} x ${item.precio} ={" "}
-                      <span className="font-semibold">${item.precio * item.cantidad}</span>
+                      <span className="font-semibold">
+                        ${item.precio * item.cantidad}
+                      </span>
                     </p>
                   </div>
+
+                  {/* 🔢 Controles de cantidad */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => restarCantidad(item.id)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 rounded"
+                    >
+                      ➖
+                    </button>
+                    <span className="w-6 text-center">{item.cantidad}</span>
+                    <button
+                      onClick={() => sumarCantidad(item.id)}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 rounded"
+                    >
+                      ➕
+                    </button>
+                  </div>
+
+                  {/* 🗑️ Botón quitar producto */}
                   <button
                     onClick={() => quitarDelCarrito(item.id)}
                     className="text-red-500 hover:text-red-700 text-sm font-semibold"
@@ -261,9 +321,12 @@ export default function DistribuidoraUI() {
                 </div>
               ))}
 
+
               {/* Total */}
               <div className="mt-4 border-t pt-4 text-right">
-                <p className="text-lg font-bold">Total: ${totalCarrito.toFixed(2)}</p>
+                <p className="text-lg font-bold">
+                  Total: ${totalCarrito.toFixed(2)}
+                </p>
               </div>
 
               {/* Datos del cliente */}

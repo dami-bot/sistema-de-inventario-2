@@ -29,19 +29,37 @@ export default function Productos() {
   // 📦 Cargar productos desde el backend
   const cargarProductos = async () => {
     try {
-      console.log("🌐 API_URL:", API_URL);
       const res = await fetch(`${API_URL}/api/productos`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setProductos(data);
+
+      const hoy = new Date();
+      const productosConVencimiento = data.map(p => {
+        let cercaVencimiento = false;
+        if (p.vencimiento) {
+          const diasRestantes = (new Date(p.vencimiento).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
+          cercaVencimiento = diasRestantes <= 7; // 7 días antes de vencer
+        }
+        return { ...p, cercaVencimiento };
+      });
+
+      setProductos(productosConVencimiento);
     } catch (err) {
       console.error("❌ Error cargando productos:", err);
     }
   };
+  const avisarVencimiento = (producto) => {
+    const numero = "5491121676940"; // Número de WhatsApp
+    const mensaje = `⚠️ El producto "${producto.nombre}" está por vencer el ${new Date(
+      producto.vencimiento
+    ).toLocaleDateString()}`;
+    const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(
+      mensaje
+    )}`;
+    window.open(url, "_blank");
+  };
 
-  useEffect(() => {
-    cargarProductos();
-  }, []);
+
 
   // 🔍 Filtrado de productos
   const productosFiltrados = productos.filter(
@@ -362,8 +380,14 @@ export default function Productos() {
 
               {/* Alerta si está por vencer */}
               {estaPorVencer && (
-                <p className="text-red-600 font-semibold">⚠️ Próximo a vencer</p>
+                <button
+                  onClick={() => avisarVencimiento(p)}
+                  className="bg-red-600 text-white px-2 py-1 rounded mt-1"
+                >
+                  ⚠️ Avisar por WhatsApp
+                </button>
               )}
+
 
               {/* Oferta del día */}
               {p.ofertaDiaria && (
