@@ -32,6 +32,7 @@ export default function Productos() {
       const res = await fetch(`${API_URL}/api/productos`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      
 
       const hoy = new Date();
       const productosConVencimiento = data.map(p => {
@@ -199,6 +200,10 @@ export default function Productos() {
       console.error("❌ Error en fetch PUT:", err);
     }
   };
+    useEffect(() => {
+    cargarProductos();
+  }, []);
+
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
