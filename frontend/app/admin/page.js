@@ -18,6 +18,9 @@ export default function Productos() {
   const [ofertaDiaria, setOfertaDiaria] = useState(false);
   const [editVencimiento, setEditVencimiento] = useState("");
   const [editOfertaDiaria, setEditOfertaDiaria] = useState(false);
+  const [productosSeleccionados, setProductosSeleccionados] = useState([]);
+  const [porcentaje, setPorcentaje] = useState("");
+
 
 
 
@@ -32,7 +35,7 @@ export default function Productos() {
       const res = await fetch(`${API_URL}/api/productos`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      
+
 
       const hoy = new Date();
       const productosConVencimiento = data.map(p => {
@@ -59,6 +62,37 @@ export default function Productos() {
     )}`;
     window.open(url, "_blank");
   };
+ const actualizarPreciosFiltrados = async () => {
+  if (productosFiltrados.length === 0) {
+    alert("No hay productos que coincidan con el filtro");
+    return;
+  }
+
+  const pct = parseFloat(porcentaje);
+  if (isNaN(pct)) {
+    alert("Ingresa un porcentaje válido");
+    return;
+  }
+
+  // Preparamos los IDs de los productos filtrados
+  const ids = productosFiltrados.map(p => p.id);
+
+  try {
+    const res = await fetch(`${API_URL}/api/productos/actualizar-precios`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, porcentaje: pct }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    alert(`✅ Precios actualizados en ${ids.length} productos`);
+    setPorcentaje("");
+    cargarProductos();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error al actualizar precios");
+  }
+};
 
 
 
@@ -104,7 +138,9 @@ export default function Productos() {
     formData.append("nombre", nombre);
     formData.append("stock", stock);
     formData.append("precio", precio);
-    if (file) formData.append("imagen", imagenUrl);
+    formData.append("vencimiento", editVencimiento);
+    formData.append("ofertaDiaria", editOfertaDiaria ? "true" : "false");
+    if (file) formData.append("imagenUrl", imagenUrl);
 
     try {
       const res = await fetch(`${API_URL}/api/productos`, {
@@ -152,7 +188,7 @@ export default function Productos() {
     setEditPrecio(producto.precio);
     setEditFile(null);
     setEditVencimiento(producto.vencimiento || "");
-    setEditOfertaDiaria(producto.ofertaDiaria || false);
+    setEditOfertaDiaria(!!producto.ofertaDiaria || false);
 
   };
 
@@ -173,12 +209,12 @@ export default function Productos() {
 
     const formData = new FormData();
     formData.append("nombre", editNombre);
-    formData.append("stock", editStock);
-    formData.append("precio", editPrecio);
+    formData.append("stock", Number(editStock));
+    formData.append("precio", Number(editPrecio));
     formData.append("vencimiento", editVencimiento);
-    formData.append("ofertaDiaria", editOfertaDiaria);
+    formData.append("ofertaDiaria", editOfertaDiaria ? "true" : "false");
 
-    if (editFile) formData.append("imagen", imagenUrl);
+    if (editFile) formData.append("imagenUrl", imagenUrl);
 
     try {
       const res = await fetch(`${API_URL}/api/productos/${productoEditando.id}`, {
@@ -200,7 +236,7 @@ export default function Productos() {
       console.error("❌ Error en fetch PUT:", err);
     }
   };
-    useEffect(() => {
+  useEffect(() => {
     cargarProductos();
   }, []);
 
@@ -349,6 +385,22 @@ export default function Productos() {
           </form>
         </div>
       )}
+      <div className="mb-6 border p-4 rounded flex items-center gap-2">
+  <input
+    type="number"
+    value={porcentaje}
+    onChange={(e) => setPorcentaje(e.target.value)}
+    placeholder="Porcentaje (+/-)"
+    className="border p-2 w-24"
+  />
+  <button
+    onClick={actualizarPreciosFiltrados}
+    className="bg-green-500 text-white px-4 py-2 rounded"
+  >
+    Aplicar a productos filtrados
+  </button>
+</div>
+
 
       {/* Lista de productos */}
       <ul className="grid grid-cols-2 sm:grid-cols-5 gap-6 w-full max-w-8xl">

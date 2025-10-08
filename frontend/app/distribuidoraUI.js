@@ -204,7 +204,7 @@ export default function DistribuidoraUI() {
           {/* Usuario */}
           {session && (
             <>
-              <span className="font-bold text-gray-700">Hola, {session.user.name}</span>
+             {/*  <span className="font-bold text-gray-700">Hola, {session.user.name}</span> */}
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
