@@ -153,7 +153,7 @@ export default function DistribuidoraUI() {
       window.open(whatsappUrl, "_blank");
 
       // Registrar compra (opcional)
-      await fetch(`${API_URL}/compras`, {
+      await fetch(`${API_URL}/api/compras`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -209,7 +209,7 @@ export default function DistribuidoraUI() {
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
               >
-                Cerrar sesión
+                
               </button>
             </>
           )}

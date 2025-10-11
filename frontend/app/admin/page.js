@@ -62,37 +62,37 @@ export default function Productos() {
     )}`;
     window.open(url, "_blank");
   };
- const actualizarPreciosFiltrados = async () => {
-  if (productosFiltrados.length === 0) {
-    alert("No hay productos que coincidan con el filtro");
-    return;
-  }
+  const actualizarPreciosFiltrados = async () => {
+    if (productosFiltrados.length === 0) {
+      alert("No hay productos que coincidan con el filtro");
+      return;
+    }
 
-  const pct = parseFloat(porcentaje);
-  if (isNaN(pct)) {
-    alert("Ingresa un porcentaje válido");
-    return;
-  }
+    const pct = parseFloat(porcentaje);
+    if (isNaN(pct)) {
+      alert("Ingresa un porcentaje válido");
+      return;
+    }
 
-  // Preparamos los IDs de los productos filtrados
-  const ids = productosFiltrados.map(p => p.id);
+    // Preparamos los IDs de los productos filtrados
+    const ids = productosFiltrados.map(p => p.id);
 
-  try {
-    const res = await fetch(`${API_URL}/api/productos/actualizar-precios`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids, porcentaje: pct }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/productos/actualizar-precios`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, porcentaje: pct }),
+      });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    alert(`✅ Precios actualizados en ${ids.length} productos`);
-    setPorcentaje("");
-    cargarProductos();
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error al actualizar precios");
-  }
-};
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      alert(`✅ Precios actualizados en ${ids.length} productos`);
+      setPorcentaje("");
+      cargarProductos();
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error al actualizar precios");
+    }
+  };
 
 
 
@@ -124,11 +124,13 @@ export default function Productos() {
   // ➕ Agregar producto
   const agregarProducto = async (e) => {
     e.preventDefault();
-    alert("📝 Agregando producto:", nombre);
+    alert("📝 Agregando producto:" + nombre);
 
     let imagenUrl = "";
     try {
       if (file) imagenUrl = await subirImagen(file);
+      console.log("✅ Imagen subida a Cloudinary:", imagenUrl);
+
     } catch (err) {
       console.error(err);
       return;
@@ -140,7 +142,7 @@ export default function Productos() {
     formData.append("precio", precio);
     formData.append("vencimiento", editVencimiento);
     formData.append("ofertaDiaria", editOfertaDiaria ? "true" : "false");
-    if (file) formData.append("imagenUrl", imagenUrl);
+    formData.append("imagenUrl", imagenUrl); // Siempre agregamos el string, incluso vacío
 
     try {
       const res = await fetch(`${API_URL}/api/productos`, {
@@ -161,6 +163,7 @@ export default function Productos() {
       cargarProductos();
       setVencimiento("");
       setOfertaDiaria(false);
+      cargarProductos();
 
       alert("✅ Producto agregado correctamente");
       console.log("✅ Producto agregado correctamente");
@@ -386,20 +389,20 @@ export default function Productos() {
         </div>
       )}
       <div className="mb-6 border p-4 rounded flex items-center gap-2">
-  <input
-    type="number"
-    value={porcentaje}
-    onChange={(e) => setPorcentaje(e.target.value)}
-    placeholder="Porcentaje (+/-)"
-    className="border p-2 w-24"
-  />
-  <button
-    onClick={actualizarPreciosFiltrados}
-    className="bg-green-500 text-white px-4 py-2 rounded"
-  >
-    Aplicar a productos filtrados
-  </button>
-</div>
+        <input
+          type="number"
+          value={porcentaje}
+          onChange={(e) => setPorcentaje(e.target.value)}
+          placeholder="Porcentaje (+/-)"
+          className="border p-2 w-24"
+        />
+        <button
+          onClick={actualizarPreciosFiltrados}
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Aplicar a productos filtrados
+        </button>
+      </div>
 
 
       {/* Lista de productos */}
