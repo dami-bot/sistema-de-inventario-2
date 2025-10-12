@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 export default function Productos() {
   const [productos, setProductos] = useState([]);
-  const [nombre, setNombre] = useState("");
+  const [nombre, setNombre] = useState("");  
   const [stock, setStock] = useState("");
   const [precio, setPrecio] = useState("");
   const [busqueda, setBusqueda] = useState("");
@@ -97,11 +97,14 @@ export default function Productos() {
 
 
   // 🔍 Filtrado de productos
-  const productosFiltrados = productos.filter(
-    (p) =>
-      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) &&
-      p.nombre.toLowerCase().includes(filtro.toLowerCase())
-  );
+  const productosFiltrados = productos.filter((p) => {
+    const coincideBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+
+    if (filtro === "porVencer") return p.cercaVencimiento && coincideBusqueda;
+    if (filtro === "oferta") return p.ofertaDiaria && coincideBusqueda;
+    return coincideBusqueda; // "todos"
+  });
+
 
   // ☁️ Subida de imagen a Cloudinary
   const subirImagen = async (file) => {
@@ -403,6 +406,27 @@ export default function Productos() {
           Aplicar a productos filtrados
         </button>
       </div>
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setFiltro("")}
+          className={`px-3 py-1 rounded ${filtro === "" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+        >
+          Todos
+        </button>
+        <button
+          onClick={() => setFiltro("porVencer")}
+          className={`px-3 py-1 rounded ${filtro === "porVencer" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+        >
+          Próximos a vencer
+        </button>
+        <button
+          onClick={() => setFiltro("oferta")}
+          className={`px-3 py-1 rounded ${filtro === "oferta" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+        >
+          Ofertas del día
+        </button>
+      </div>
+
 
 
       {/* Lista de productos */}
@@ -416,13 +440,13 @@ export default function Productos() {
           return (
             <li
               key={p.id}
-              className="bg-white p-4 rounded shadow flex flex-col relative"
+              className="bg-white p-3 rounded flex flex-col relative"
             >
               {/* Imagen del producto */}
               <img
                 src={p.imagenUrl || "https://via.placeholder.com/150"}
                 alt={p.nombre}
-                className="h-40 w-full object-cover mb-2 rounded"
+                className="h-30 w-full object-cover mb-0 rounded"
               />
 
               {/* Nombre y precio */}

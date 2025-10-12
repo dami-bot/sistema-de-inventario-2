@@ -16,7 +16,7 @@ export default function LandingPage() {
         <p className="text-lg mb-8">
           Controlá tu stock de manera simple, rápida y desde cualquier dispositivo.
         </p>
-        <Link href="/productos">
+        <Link href="/">
           <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
             Ingresar al Panel
           </button>

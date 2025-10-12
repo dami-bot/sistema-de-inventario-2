@@ -11,7 +11,9 @@ export default function DistribuidoraUI() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [busqueda, setBusqueda] = useState("");
   const [openCart, setOpenCart] = useState(false);
-
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const limit = 20; // productos por página
 
 
 
@@ -22,21 +24,65 @@ export default function DistribuidoraUI() {
   useEffect(() => {
     if (!API_URL) return console.error("NEXT_PUBLIC_API_URL no está definido");
 
-    const fetchProductos = async () => {
+    const fetchProductos = async (pagina) => {
       try {
-        const res = await fetch(`${API_URL}/api/productos`);
-        if (!res.ok) return console.error("Error al obtener productos:", res.status);
+        const res = await fetch(`${API_URL}/api/productos?page=${pagina}&limit=${limit}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setProductos(Array.isArray(data) ? data : []);
+
+        if (data.length < limit) setHasMore(false);
+        setProductos((prev) => [...prev, ...data]);
       } catch (err) {
-        console.error("Error de red:", err);
+        console.error("❌ Error cargando productos:", err);
       }
     };
 
-    fetchProductos();
+    fetchProductos(1);
   }, [API_URL]);
-  const ofertasDiarias = productos.slice(0, 10); // los primeros 5 productos como prueba
-  //const ofertasDiarias = productos.filter((p) => p.ofertaDiaria);
+
+  // Scroll infinito
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!hasMore) return;
+      const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+      if (bottom) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [page, hasMore]);
+
+  // Traer productos cuando cambia la página
+  useEffect(() => {
+    const fetchProductos = async (pagina) => {
+      try {
+        const res = await fetch(`${API_URL}/api/productos?page=${pagina}&limit=${limit}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data.length < limit) setHasMore(false);
+        setProductos((prev) => [...prev, ...data]);
+      } catch (err) {
+        console.error("❌ Error cargando productos:", err);
+      }
+    };
+
+    fetchProductos(page);
+  }, [page, API_URL]);
+
+  // const ofertasDiarias = productos.slice(0, 10); // los primeros 5 productos como prueba
+  const ofertasDiarias = productos.filter((p) => p.ofertaDiaria);
+  // 🔹 Filtrar duplicados por id
+  const ofertasUnicas = Array.from(
+    new Map(ofertasDiarias.map(item => [item.id, item])).values()
+  );
+  // Filtrar duplicados por id antes del render
+  const productosUnicos = Array.from(
+    new Map(productos.map(item => [item.id, item])).values()
+  );
+
 
   // 🔹 Auto-scroll del carrusel cada 2 segundos
   useEffect(() => {
@@ -204,12 +250,12 @@ export default function DistribuidoraUI() {
           {/* Usuario */}
           {session && (
             <>
-             {/*  <span className="font-bold text-gray-700">Hola, {session.user.name}</span> */}
+              {/*  <span className="font-bold text-gray-700">Hola, {session.user.name}</span> */}
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
               >
-                
+
               </button>
             </>
           )}
@@ -222,7 +268,7 @@ export default function DistribuidoraUI() {
         <div
           ref={carruselRef}
           className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth">
-          {ofertasDiarias.map((item) => {
+          {ofertasUnicas.map((item) => {
             const enCarrito = carrito.find((p) => p.id === item.id);
             return (
               <div
@@ -383,7 +429,7 @@ export default function DistribuidoraUI() {
           />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 ">
-          {productos
+          {productosUnicos
             .filter((p) =>
               p.nombre.toLowerCase().includes(busqueda.toLowerCase())
             )
