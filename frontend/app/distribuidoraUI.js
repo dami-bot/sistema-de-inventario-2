@@ -228,16 +228,24 @@ export default function DistribuidoraUI() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-700 to-stone-300 flex flex-col">
       {/* NAVBAR */}
-      <nav className="bg-white shadow-sm p-4 flex justify-between items-center fixed top-0 w-full z-50 shadow-lg">
-        <div className="flex items-center gap-4">
-          <img src="/logo.jpg" alt="Logo" className="w-32 h-auto object-contain" />
-          <h1 className="text-xl font-bold">Distribuidora</h1>
+      <nav className="bg-white shadow-sm fixed top-0 w-full z-50 h-28 flex items-center px-4 md:px-8">
+        {/* Logo + Título centrado */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+          <img
+            src="/trebol.png"
+            alt="Logo"
+            className="w-24 sm:w-28 md:w-32 lg:w-36 h-auto mb-1"
+          />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center">
+            Distribuidora
+          </h1>
         </div>
 
-        <div className="flex items-center gap-6">
-          {/* 🛒 Icono del carrito */}
+        {/* Iconos a la derecha */}
+        <div className="ml-auto flex items-center gap-4 sm:gap-6">
+          {/* Carrito */}
           <button onClick={() => setOpenCart(true)} className="relative">
-            <FaShoppingCart className="text-2xl text-gray-700 hover:text-blue-600 transition" />
+            <FaShoppingCart className="text-xl sm:text-2xl md:text-2xl text-gray-700 hover:text-blue-600 transition" />
             {carrito.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 rounded-full">
                 {carrito.reduce((total, item) => total + item.cantidad, 0)}
@@ -245,22 +253,10 @@ export default function DistribuidoraUI() {
             )}
           </button>
 
-
-
-          {/* Usuario */}
-          {session && (
-            <>
-              {/*  <span className="font-bold text-gray-700">Hola, {session.user.name}</span> */}
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-              >
-
-              </button>
-            </>
-          )}
+          {/* Aquí puedes agregar más iconos o botones */}
         </div>
       </nav>
+
       {/* 🏷️ Carrusel de ofertas diarias */}
       <div className="relative w-full overflow-hidden py-6 mb-8 mt-50 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-100 rounded-xl shadow-lg">
 
