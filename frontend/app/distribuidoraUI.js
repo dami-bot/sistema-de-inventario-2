@@ -226,18 +226,18 @@ export default function DistribuidoraUI() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-700 to-stone-300 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-700 to-stone-300 flex flex-col ">
       {/* NAVBAR */}
-      <nav className="bg-white shadow-sm fixed top-0 w-full z-50 h-28 flex items-center px-4 md:px-8">
+      <nav className="bg-[url('/fondo-nav.jpg')] shadow-sm fixed top-0 w-full z-50 h-42 flex items-center px-4 md:px-8">
         {/* Logo + Título centrado */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center   ">
           <img
-            src="/trebol.png"
+            src="/diseño2.png"
             alt="Logo"
-            className="w-24 sm:w-28 md:w-32 lg:w-36 h-auto mb-1"
+            className="w-62 sm:w-52 md:w-76 lg:w-88 h-auto mb-5 rounded-br-full rounded-bl-full  rounded-full  "
           />
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center">
-            Distribuidora
+            
           </h1>
         </div>
 
@@ -245,7 +245,7 @@ export default function DistribuidoraUI() {
         <div className="ml-auto flex items-center gap-4 sm:gap-6">
           {/* Carrito */}
           <button onClick={() => setOpenCart(true)} className="relative">
-            <FaShoppingCart className="text-xl sm:text-2xl md:text-2xl text-gray-700 hover:text-blue-600 transition" />
+            <FaShoppingCart className="text-xl sm:text-4xl md:text-6xl lg:text-8xl text-black-900 hover:text-blue-600 transition" />
             {carrito.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 rounded-full">
                 {carrito.reduce((total, item) => total + item.cantidad, 0)}
