@@ -232,7 +232,7 @@ export default function DistribuidoraUI() {
         {/* Logo + Título centrado */}
         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center   ">
           <img
-            src="/logo.jpg"
+            src="/diseño2.jpg"
             alt="Logo"
             className="w-62 sm:w-52 md:w-76 lg:w-88 h-auto mb-5 rounded-br-full rounded-bl-full  rounded-full  "
           />
