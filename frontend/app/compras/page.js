@@ -1,16 +1,25 @@
 "use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import jsPDF from "jspdf";
 
 export default function HistorialCompras() {
   const [compras, setCompras] = useState([]);
+  const [periodo, setPeriodo] = useState("diario");
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
-    fetch( `${API_URL}/api/compras`)
+    fetch(`${API_URL}/api/compras`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("Respuesta compras:", data); // 👈 agregá esto
-        // Si la respuesta tiene .data, extraelo. Si no, usá como viene
         setCompras(Array.isArray(data) ? data : data.data || []);
       })
       .catch((err) => {
@@ -18,113 +27,181 @@ export default function HistorialCompras() {
         setCompras([]);
       });
   }, []);
-  const totalGeneral = Array.isArray(compras)
-    ? compras.reduce((acc, compra) => {
-        const totalCompra = compra.items.reduce(
-          (sum, item) => sum + item.precio * item.cantidad,
-          0,
-        );
-        return acc + totalCompra;
-      }, 0)
-    : 0;
-  const limpiarHistorial = async () => {
-    if (
-      !confirm(
-        "¿Estás seguro de que querés borrar todo el historial de compras?",
-      )
-    )
-      return;
 
-    try {
-      const res = await fetch( `${API_URL}/api/compras`, {
-        method: "DELETE",
-      });
+  // 🔹 Procesar datos según período seleccionado
+  const ventasProcesadas = useMemo(() => {
+    const mapa = {};
 
-      if (res.ok) {
-        alert("Historial eliminado correctamente");
-        // Recargar historial
-        const nuevasCompras = await fetch(
-          `${API_URL}/api/compras`,
-        ).then((r) => r.json());
-        setCompras(nuevasCompras);
-      } else {
-        alert("Error al limpiar el historial");
+    compras.forEach((compra) => {
+      const fecha = new Date(compra.date);
+      let clave = "";
+
+      switch (periodo) {
+        case "diario":
+          clave = fecha.toLocaleDateString("es-AR", {
+            day: "2-digit",
+            month: "2-digit",
+          });
+          break;
+        case "semanal":
+          clave = fecha.toLocaleDateString("es-AR", {
+            weekday: "short",
+          });
+          break;
+        case "mensual":
+          clave = fecha.toLocaleDateString("es-AR", {
+            month: "short",
+          });
+          break;
+        case "anual":
+          clave = fecha.getFullYear().toString();
+          break;
+        default:
+          clave = fecha.toLocaleDateString("es-AR");
       }
-    } catch (err) {
-      console.log(err);
 
-      console.error(err);
-      alert("Ocurrió un error inesperado");
-    }
+      const total = compra.items.reduce(
+        (acc, item) => acc + item.precio * item.cantidad,
+        0
+      );
+      mapa[clave] = (mapa[clave] || 0) + total;
+    });
+
+    return Object.entries(mapa).map(([fecha, total]) => ({ fecha, total }));
+  }, [compras, periodo]);
+
+  const totalGeneral = compras.reduce((acc, compra) => {
+    const totalCompra = compra.items.reduce(
+      (sum, item) => sum + item.precio * item.cantidad,
+      0
+    );
+    return acc + totalCompra;
+  }, 0);
+
+  const cantidadCompras = compras.length;
+  const promedioCompra = cantidadCompras ? totalGeneral / cantidadCompras : 0;
+
+  // 🔹 Generar PDF solo con texto
+  const generarPDF = () => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "px", format: "a4" });
+
+    doc.setFontSize(20);
+    doc.text("📄 Reporte de Ventas", 40, 40);
+
+    doc.setFontSize(14);
+    doc.text(`Período: ${periodo.toUpperCase()}`, 40, 70);
+    doc.text(`Total de ventas: $${totalGeneral.toFixed(2)}`, 40, 90);
+    doc.text(`Cantidad de compras: ${cantidadCompras}`, 40, 110);
+    doc.text(`Promedio por compra: $${promedioCompra.toFixed(2)}`, 40, 130);
+
+    doc.setFontSize(16);
+    doc.text("Ventas por período:", 40, 170);
+
+    let y = 190;
+    ventasProcesadas.forEach(({ fecha, total }) => {
+      doc.text(`${fecha}: $${total.toFixed(2)}`, 60, y);
+      y += 20;
+      if (y > 750) {
+        doc.addPage();
+        y = 40;
+      }
+    });
+
+    doc.save(`Reporte_Ventas_${new Date().toLocaleDateString()}.pdf`);
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-blue-100 via-cyan-100 to-pink-100 py-10">
-      <Link
-        href="/"
-        className="absolute left-4 top-4 text-blue-600 hover:underline"
-      >
-        ← Volver al inicio
-      </Link>
-      <h1 className="mb-2 text-center text-4xl font-extrabold text-gray-800 drop-shadow-lg">
-        Historial de Compras
-      </h1>
-      <div className="mb-8 text-center text-xl font-bold text-blue-700">
-        Total general: ${totalGeneral.toFixed(2)}
-        <button
-          onClick={limpiarHistorial}
-          className="mb-4 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-        >
-          🗑️ Limpiar historial de compras
-        </button>
+    <div className="p-6 space-y-8">
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">📊 Historial de Ventas</h1>
+
+        <div className="flex items-center gap-4">
+          <select
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-gray-700"
+          >
+            <option value="diario">Diario</option>
+            <option value="semanal">Semanal</option>
+            <option value="mensual">Mensual</option>
+            <option value="anual">Anual</option>
+          </select>
+
+          <button
+            onClick={generarPDF}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Generar PDF
+          </button>
+        </div>
       </div>
-      <div className="w-full max-w-3xl space-y-8">
-        {compras.length === 0 && (
-          <div className="mt-8 animate-pulse text-center text-gray-500">
-            No hay compras registradas.
-          </div>
-        )}
-        {compras.map((compra) => {
-          // Calcular el total de la compra
-          const total = compra.items.reduce(
-            (acc, item) => acc + item.precio * item.cantidad,
-            0,
-          );
-          return (
-            <div key={compra.id} className="rounded-xl bg-white p-6 shadow-lg">
-              <div className="mb-2 text-sm text-gray-600">
-                <span className="font-bold">Fecha:</span>{" "}
-                {new Date(compra.date).toLocaleString()}
-              </div>
-              <div>
-                <span className="font-bold text-gray-700">Productos:</span>
-                <ul className="mt-2 space-y-1">
-                  {compra.items.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <img
-                        src={item.imageUrl || "https://via.placeholder.com/40"}
-                        alt={item.name}
-                        className="h-8 w-8 rounded border object-cover"
-                      />
-                      <span className="font-semibold">{item.nombre}</span>
-                      <span className="text-gray-500">x{item.cantidad}</span>
-                      <span className="ml-auto text-gray-400">
-                        ${item.precio * item.cantidad}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 text-right font-bold text-blue-700">
-                  Total de la compra: ${total.toFixed(2)}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+
+      {/* 🔹 Tarjetas resumen */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white/70 p-4 rounded-xl shadow-md text-center">
+          <p className="text-gray-600 text-sm">Total Vendido</p>
+          <h3 className="text-xl font-semibold">${totalGeneral.toFixed(2)}</h3>
+        </div>
+        <div className="bg-white/70 p-4 rounded-xl shadow-md text-center">
+          <p className="text-gray-600 text-sm">Compras Totales</p>
+          <h3 className="text-xl font-semibold">{cantidadCompras}</h3>
+        </div>
+        <div className="bg-white/70 p-4 rounded-xl shadow-md text-center">
+          <p className="text-gray-600 text-sm">Promedio por Compra</p>
+          <h3 className="text-xl font-semibold">${promedioCompra.toFixed(2)}</h3>
+        </div>
       </div>
-      <footer className="mt-12 py-6 text-center text-gray-500">
-        Historial de compras &copy; {new Date().getFullYear()}
-      </footer>
+
+      {/* 🔹 Gráfico dinámico */}
+      <div className="bg-white/70 rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          📅 Ventas {periodo.charAt(0).toUpperCase() + periodo.slice(1)}
+        </h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={ventasProcesadas}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="fecha" />
+            <YAxis />
+            <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+            <Bar dataKey="total" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* 🔹 Tabla de historial */}
+      <div className="bg-white/70 rounded-xl shadow-md p-6 overflow-x-auto">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">🧾 Detalle de Compras</h2>
+        <table className="w-full text-sm text-left text-gray-700">
+          <thead className="bg-gray-200 text-gray-800 uppercase text-xs">
+            <tr>
+              <th className="px-4 py-2">Fecha</th>
+              <th className="px-4 py-2">N° Pedido</th>
+              <th className="px-4 py-2">Cliente</th>
+              <th className="px-4 py-2">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {compras.map((c, i) => (
+              <tr key={i} className="border-b border-gray-300 hover:bg-gray-50">
+                <td className="px-4 py-2">
+                  {new Date(c.date).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-2">{c.numeroPedido || `#${i + 1}`}</td>
+                <td className="px-4 py-2">{c.cliente || "Cliente genérico"}</td>
+                <td className="px-4 py-2">
+                  $
+                  {c.items
+                    .reduce(
+                      (sum, item) => sum + item.precio * item.cantidad,
+                      0
+                    )
+                    .toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
