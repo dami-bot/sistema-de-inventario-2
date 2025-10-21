@@ -440,6 +440,75 @@ export default function Productos() {
           <p className="mt-4 text-gray-500">No hay productos para mostrar.</p>
         )}
       </div>
+      {productoEditando && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <form
+      onSubmit={guardarEdicion}
+      className="bg-white p-6 rounded-lg shadow-lg w-96"
+    >
+      <h2 className="text-xl font-bold mb-4">Editar producto</h2>
+      <input
+        type="text"
+        value={editNombre}
+        onChange={(e) => setEditNombre(e.target.value)}
+        placeholder="Nombre"
+        className="border p-2 w-full mb-2"
+        required
+      />
+      <input
+        type="number"
+        value={editStock}
+        onChange={(e) => setEditStock(e.target.value)}
+        placeholder="Stock"
+        className="border p-2 w-full mb-2"
+        required
+      />
+      <input
+        type="number"
+        value={editPrecio}
+        onChange={(e) => setEditPrecio(e.target.value)}
+        placeholder="Precio"
+        className="border p-2 w-full mb-2"
+        required
+      />
+      <input
+        type="file"
+        onChange={(e) => setEditFile(e.target.files[0])}
+        className="border p-2 w-full mb-2"
+      />
+      <input
+        type="date"
+        value={editVencimiento}
+        onChange={(e) => setEditVencimiento(e.target.value)}
+        className="border p-2 w-full mb-2"
+      />
+      <label className="flex items-center gap-2 mb-2">
+        <input
+          type="checkbox"
+          checked={editOfertaDiaria}
+          onChange={(e) => setEditOfertaDiaria(e.target.checked)}
+        />
+        Oferta del día
+      </label>
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setProductoEditando(null)}
+          className="bg-gray-400 text-white px-4 py-2 rounded"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+)}
+
     </div>
   );
 };
