@@ -17,16 +17,21 @@ export default function HistorialCompras() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
-    fetch(`${API_URL}/api/compras`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCompras(Array.isArray(data) ? data : data.data || []);
-      })
-      .catch((err) => {
+    const cargarCompras = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/compras`);
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const data = await res.json();
+        console.log("Compras recibidas del backend:", data);
+        setCompras(Array.isArray(data) ? data : []);
+      } catch (err) {
         console.error("Error al cargar compras:", err);
         setCompras([]);
-      });
-  }, []);
+      }
+    };
+    cargarCompras();
+  }, [API_URL]);
+
 
   // 🔹 Procesar datos según período seleccionado
   const ventasProcesadas = useMemo(() => {
@@ -60,10 +65,9 @@ export default function HistorialCompras() {
           clave = fecha.toLocaleDateString("es-AR");
       }
 
-      const total = compra.items.reduce(
-        (acc, item) => acc + item.precio * item.cantidad,
-        0
-      );
+      const total = (Array.isArray(compra.items) ? compra.items : JSON.parse(compra.items || "[]"))
+        .reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+
       mapa[clave] = (mapa[clave] || 0) + total;
     });
 
@@ -71,12 +75,11 @@ export default function HistorialCompras() {
   }, [compras, periodo]);
 
   const totalGeneral = compras.reduce((acc, compra) => {
-    const totalCompra = compra.items.reduce(
-      (sum, item) => sum + item.precio * item.cantidad,
-      0
-    );
+    const items = Array.isArray(compra.items) ? compra.items : JSON.parse(compra.items || "[]");
+    const totalCompra = items.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
     return acc + totalCompra;
   }, 0);
+
 
   const cantidadCompras = compras.length;
   const promedioCompra = cantidadCompras ? totalGeneral / cantidadCompras : 0;
@@ -151,6 +154,7 @@ export default function HistorialCompras() {
           <h3 className="text-xl font-semibold">${promedioCompra.toFixed(2)}</h3>
         </div>
       </div>
+
 
       {/* 🔹 Gráfico dinámico */}
       <div className="bg-white/70 rounded-xl shadow-md p-6">
