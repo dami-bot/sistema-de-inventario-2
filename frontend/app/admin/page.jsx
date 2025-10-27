@@ -251,7 +251,7 @@ export default function Productos() {
     <div className="flex flex-col h-screen bg-gray-100">
       {/* 🔹 CABECERA FIJA CON FORMULARIO Y FILTROS */}
       <div className="sticky top-0 z-20 bg-gray-100 p-4 border-b shadow-sm">
-        <div className="backdrop-blur-md bg-white/10 p-6 rounded-2xl shadow-lg mb-4 text-center">
+        <div className="backdrop-blur-md bg-white/10 p-0 rounded-2xl shadow-lg mb-4 text-center">
           <h1 className="text-3xl font-bold">Inventario de Productos</h1>
           <div className="flex justify-between items-center mb-4">
 

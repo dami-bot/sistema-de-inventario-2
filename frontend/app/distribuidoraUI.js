@@ -228,69 +228,66 @@ export default function DistribuidoraUI() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-700 to-stone-300 flex flex-col ">
       {/* NAVBAR */}
-      <nav className="bg-[url('/fondo-nav.jpg')] shadow-sm fixed top-0 w-full z-50 h-42 flex items-center px-4 md:px-8">
-        {/* Logo + Título centrado */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center   ">
+      <nav className="bg-gradient-to-r from-yellow-400 via-orange-300 to-red-400 shadow-lg fixed top-0 w-full z-50 h-44 flex items-center px-6 md:px-12">
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center animate-bounce">
           <img
-            src="/diseño2.jpg"
+            src="/diseño2.png"
             alt="Logo"
-            className="w-62 sm:w-52 md:w-76 lg:w-88 h-auto mb-5 rounded-br-full rounded-bl-full  rounded-full  "
+            className="w-64 sm:w-52 md:w-72 lg:w-80 h-auto mb-2 rounded-full shadow-lg hover:scale-110 transition-transform duration-300"
           />
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center">
-            
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg">
+            Distribuidora 
           </h1>
         </div>
-
-        {/* Iconos a la derecha */}
         <div className="ml-auto flex items-center gap-4 sm:gap-6">
-          {/* Carrito */}
-          <button onClick={() => setOpenCart(true)} className="relative">
-            <FaShoppingCart className="text-xl sm:text-4xl md:text-6xl lg:text-8xl text-black-900 hover:text-blue-600 transition" />
+          <button onClick={() => setOpenCart(true)} className="relative animate-pulse hover:scale-110 transition">
+            <FaShoppingCart className="text-3xl sm:text-5xl text-white" />
             {carrito.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 rounded-full">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 rounded-full">
                 {carrito.reduce((total, item) => total + item.cantidad, 0)}
               </span>
             )}
           </button>
-
-          {/* Aquí puedes agregar más iconos o botones */}
         </div>
       </nav>
 
-      {/* 🏷️ Carrusel de ofertas diarias */}
-      <div className="relative w-full overflow-hidden py-6 mb-8 mt-50 bg-gradient-to-r from-amber-300 via-amber-200 to-amber-100 rounded-xl shadow-lg">
 
-        <h2 className="text-4xl text-black font-bold text-center mb-6">🔥 Ofertas del día 🔥</h2>
+      {/* 🏷️ Carrusel de ofertas diarias */}
+      <div className="relative w-full overflow-hidden py-6 mb-8 mt-52 bg-white/30 backdrop-blur-md rounded-xl shadow-2xl border border-white/20">
+        <h2 className="text-4xl text-white font-bold text-center mb-6 drop-shadow-lg">
+          🔥 Ofertas del día 🔥
+        </h2>
         <div
           ref={carruselRef}
-          className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth">
+          className="flex gap-6 overflow-x-auto px-4 snap-x snap-mandatory scroll-smooth"
+        >
           {ofertasUnicas.map((item) => {
             const enCarrito = carrito.find((p) => p.id === item.id);
             return (
               <div
                 key={item.id}
-                className="min-w-[250px] snap-center bg-white rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
+                className="min-w-[250px] snap-center bg-white/80 backdrop-blur-sm rounded-xl p-4 flex flex-col items-center transform transition-transform duration-500 hover:scale-105 hover:shadow-2xl"
               >
                 <img
                   src={item.imagenUrl || "https://via.placeholder.com/150"}
                   alt={item.nombre}
-                  className="w-full h-48 object-cover rounded-lg mb-3"
+                  className="w-full h-48 object-cover rounded-lg mb-3 shadow-md"
                 />
-                <h3 className="text-lg font-bold text-gray-700">{item.nombre}</h3>
-                <p className="text-green-600 font-semibold">${item.precio}</p>
+                <h3 className="text-lg font-bold text-gray-700 text-center">{item.nombre}</h3>
+                <p className="text-green-600 font-semibold mb-2">${item.precio}</p>
 
-                {/* Botón para agregar o quitar */}
+                {/* Botón para agregar o quitar del carrito */}
                 {enCarrito ? (
                   <button
                     onClick={() => quitarDelCarrito(item.id)}
-                    className="mt-2 w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
+                    className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
                   >
                     Quitar del carrito
                   </button>
                 ) : (
                   <button
                     onClick={() => agregarAlCarrito(item)}
-                    className="mt-2 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                    className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
                   >
                     Agregar al carrito
                   </button>
@@ -462,7 +459,7 @@ export default function DistribuidoraUI() {
 
 
       {/* FOOTER */}
-      <footer className="text-center text-gray-500 py-6 mt-12">
+      <footer className="text-center text-gray-300 py-6 mt-12 bg-stone-900/70">
         Distribuidora &copy; {new Date().getFullYear()} | Todos los derechos reservados - DAMI-WEB
         <div className="justify-center flex gap-4 text-lg mt-2">
           <a href="mailto:contacto@distribuidora.com" className="hover:text-blue-600">

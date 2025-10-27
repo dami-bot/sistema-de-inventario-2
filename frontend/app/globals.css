@@ -2,3 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 @import "tailwindcss";
+
+@keyframes gridMove {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 0 1000px, 0 1000px; }
+}
+@keyframes pulseNeon {
+  0% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+  100% { opacity: 0.15; }
+}
+
+.animate-pulseNeon {
+  animation: pulseNeon 3s ease-in-out infinite;
+}
